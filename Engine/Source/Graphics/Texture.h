@@ -1,7 +1,5 @@
 #pragma once
 #include <memory>
-#include <entt/entt.hpp>
-
 
 namespace Engine
 {

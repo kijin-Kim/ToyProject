@@ -3,7 +3,7 @@
 #include <string_view>
 #include <vector>
 
-#include "RendererTypes.h"
+#include "GraphicsTypes.h"
 
 
 namespace Engine

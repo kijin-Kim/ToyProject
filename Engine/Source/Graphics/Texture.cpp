@@ -1,11 +1,12 @@
+#include "EnginePCH.h"
 #include "Texture.h"
 #include <stb_image.h>
-#include "SimpleMath.h"
+#include <entt/entt.hpp>
 
 
 namespace Engine
 {
-    TextureLoader::result_type Engine::TextureLoader::operator()(std::string_view filePath) const
+    TextureLoader::result_type TextureLoader::operator()(std::string_view filePath) const
     {
         int width = 0;
         int height = 0;

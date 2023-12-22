@@ -7,7 +7,7 @@ namespace Engine
     struct Mesh;
     struct Texture;
 
-    class ResourceManager
+    class AssetManager
     {
     public:
         static entt::resource<Texture> LoadTexture(const entt::id_type id, std::string_view filePath);

@@ -1,3 +1,4 @@
+#include "EnginePCH.h"
 #include "Mesh.h"
 
 #include <assimp/Importer.hpp>      // C++ importer interface
@@ -35,8 +36,8 @@ namespace Engine
                 }
 
                 Vertices.push_back({
-                    SimpleMath::Vector3(vertex.x, vertex.y, vertex.z), SimpleMath::Vector3(normal.x, normal.y, normal.z),
-                    SimpleMath::Vector2(texCoord.x, texCoord.y)
+                    DirectX::SimpleMath::Vector3(vertex.x, vertex.y, vertex.z), DirectX::SimpleMath::Vector3(normal.x, normal.y, normal.z),
+                    DirectX::SimpleMath::Vector2(texCoord.x, texCoord.y)
                 });
             }
 

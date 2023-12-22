@@ -25,17 +25,21 @@ project "Editor"
 
    includedirs
    {
+      "Source",
       "Engine/Source",
       "%{IncludeDirectories.glfw}",
       "%{IncludeDirectories.entt}",
       "%{IncludeDirectories.assimp}",
       "%{IncludeDirectories.stb_image}",
       "%{IncludeDirectories.spdlog}",
+      "%{IncludeDirectories.DirectX}",
+      "%{IncludeDirectories.imgui}",
    }
 
    links
    {
-      "Engine",
+      "Engine", 
+      "%{Libraries.imgui}"
    }
 
    defines

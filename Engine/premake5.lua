@@ -6,6 +6,9 @@ project "Engine"
    conformancemode (true)
    justmycode "Off"
 
+   pchheader "EnginePCH.h"
+   pchsource "Source/EnginePCH.cpp"
+
    
    targetdir ("Binaries/" .. OutputPath)
    objdir ("Intermediate/" .. OutputPath)
@@ -16,11 +19,13 @@ project "Engine"
 
    includedirs
    {
+      "Source",
       "%{IncludeDirectories.glfw}",
       "%{IncludeDirectories.entt}",
       "%{IncludeDirectories.assimp}",
       "%{IncludeDirectories.stb_image}",
       "%{IncludeDirectories.spdlog}",
+      "%{IncludeDirectories.DirectX}",
    }
 
    links

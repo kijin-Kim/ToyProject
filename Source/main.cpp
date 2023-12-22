@@ -1,10 +1,10 @@
 #include <windows.h>
-#include "D3D12Application.h"
+#include "EditorApplication.h"
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-    const Application::ApplicationSpec appSpec{};
-    D3D12Application App(appSpec);
+    const Engine::Application::ApplicationSpec appSpec{};
+    EditorApplication App(appSpec);
     App.Run();
 }
 
