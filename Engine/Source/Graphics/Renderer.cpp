@@ -36,7 +36,7 @@ namespace Engine
         CreatePipelineState();
         CreateVertexAndIndexBuffer();
     }
-
+    
     void Renderer::Render()
     {
         const uint32_t currentBackBufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
@@ -63,12 +63,9 @@ namespace Engine
         m_CommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
         m_CommandList->SetPipelineState(m_PipelineState.Get());
         m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-
-        static float angle = 0.0f;
-        angle += 0.016f * 1.0f;
+        
         DirectX::SimpleMath::Matrix model = DirectX::SimpleMath::Matrix::CreateScale(1.0f)
-            //* DirectX::SimpleMath::Matrix::CreateFromYawPitchRoll(angle, XMConvertToRadians(90.0f), 0.0f)
-            * DirectX::SimpleMath::Matrix::CreateFromYawPitchRoll(angle, DirectX::XMConvertToRadians(0.0f), 0.0f)
+            * DirectX::SimpleMath::Matrix::CreateFromYawPitchRoll(0.0f, DirectX::XMConvertToRadians(0.0f), 0.0f)
             * DirectX::SimpleMath::Matrix::CreateTranslation(0.0f, 0.0f, 0.0f);
 
 
