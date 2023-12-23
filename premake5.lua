@@ -12,7 +12,7 @@ project "Editor"
    kind "WindowedApp"
    language "C++"
    cppdialect "C++20"
-   staticruntime "off"
+   staticruntime "Off"
    conformancemode (true)
    justmycode "Off"
 
@@ -39,7 +39,7 @@ project "Editor"
    links
    {
       "Engine", 
-      "%{Libraries.imgui}"
+      "imgui"
    }
 
    defines
@@ -79,4 +79,7 @@ project "Editor"
    
 
 include "Engine"
+group "ThirdParties"
+   include "ThirdParties/imgui"
+group ""
    

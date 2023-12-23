@@ -54,13 +54,12 @@ void EditorApplication::RenderUI()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    //ImGuiDockspace();
-
-
+    
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     bool show_demo_window;
     bool show_another_window;
     ImGui::ShowDemoWindow(&show_demo_window);
+    //ImGui::DockSpace()
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {

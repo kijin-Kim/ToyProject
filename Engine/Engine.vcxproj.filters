@@ -13,7 +13,16 @@
     <ClInclude Include="Source\Core\Application.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Core.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\RenderContext.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\EnginePCH.h" />
+    <ClInclude Include="Source\Graphics\DynamicDescriptorHeap.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Graphics\GraphicsTypes.h">
       <Filter>Graphics</Filter>
     </ClInclude>
@@ -32,7 +41,16 @@
     <ClCompile Include="Source\Core\Application.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Core.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\RenderContext.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\EnginePCH.cpp" />
+    <ClCompile Include="Source\Graphics\DynamicDescriptorHeap.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Graphics\Mesh.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
