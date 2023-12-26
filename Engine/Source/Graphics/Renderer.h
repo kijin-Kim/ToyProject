@@ -47,7 +47,8 @@ namespace Engine
         {
             return m_SwapChain->GetCurrentBackBufferIndex();
         }
-        
+
+        entt::registry& GetRegister() { return m_Registry; }
 
     private:
         Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence = nullptr;
@@ -87,5 +88,8 @@ namespace Engine
         std::vector<RenderCommand> m_RenderCommands;
 
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_SceneColorBuffers;
+
+
+        entt::registry m_Registry;
     };
 }

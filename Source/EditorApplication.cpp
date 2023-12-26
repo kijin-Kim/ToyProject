@@ -6,6 +6,7 @@
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_glfw.h"
 #include "Core/Core.h"
+#include "ECS/Components.h"
 
 void EditorApplication::Initialize()
 {
@@ -113,13 +114,43 @@ void EditorApplication::RenderUI()
     }
     // Rendering
 
-    ImGui::Begin("Viewport");
-    ImVec2 windowSize = ImGui::GetWindowSize();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoScrollbar;
+    ImGui::Begin("Viewport", nullptr, windowFlags);
     auto descHeap = m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(descHeap->GetGPUDescriptorHandleForHeapStart(), m_Renderer.GetCurrentBackBufferIndex() + 1,
                                             Engine::Core::GetRenderContext().GetDevice()->GetDescriptorHandleIncrementSize(
                                                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-    ImGui::Image((void*)gpuHandle.ptr, windowSize);
+    ImGui::Image((void*)gpuHandle.ptr, ImGui::GetWindowSize());
     ImGui::End();
+    ImGui::PopStyleVar(1);
+
+
+    ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_Always);
+    ImGui::Begin("Hierarchy");
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+
+
+    auto& registry = m_Renderer.GetRegister();
+    if (ImGui::TreeNode("Scene"))
+    {
+        auto view = registry.view<Engine::DisplayNameComponent>();
+        for (const auto [entity, displayName] : view.each())
+        {
+            if (ImGui::TreeNode(displayName.Name.c_str()))
+            {
+                ImGui::Text("HelloChild");
+                ImGui::TreePop();
+            }
+            
+        }
+        
+        ImGui::TreePop();
+    }
+
+
+    ImGui::PopStyleVar();
+    ImGui::End();
+
     ImGui::Render();
 }

@@ -23,5 +23,4 @@ private:
     Engine::Renderer m_Renderer;
     uint32_t m_FrameCount = 2;
     Microsoft::WRL::ComPtr<ID3D12Resource> m_RTVResource = nullptr;
-    
 };

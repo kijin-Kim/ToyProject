@@ -5,12 +5,14 @@
 #include "d3dx12.h"
 #include "GraphicsHelper.h"
 #include "Mesh.h"
-#include "Texture.h"
 #include "Core/Core.h"
+#include "ECS/Components.h"
 
 
 namespace Engine
 {
+    struct TransformComponent;
+
     void Renderer::Initialize(HWND windowHandle, uint32_t width, uint32_t height)
     {
         m_Width = width;
@@ -35,6 +37,17 @@ namespace Engine
         CreatePipelineState();
         CreateSceneTextures();
         CreateVertexAndIndexBuffer();
+
+
+        const auto lightEntity = m_Registry.create();
+        auto& transform = m_Registry.emplace<TransformComponent>(lightEntity);
+        auto& light = m_Registry.emplace<LightComponent>(lightEntity);
+        auto& displayName = m_Registry.emplace<DisplayNameComponent>(lightEntity);
+
+        displayName.Name = "Light";
+        transform.Translation = DirectX::SimpleMath::Vector3{ 0.0f, 0.0f, -100.0f };
+        light.LightColor = DirectX::Colors::LightGoldenrodYellow;
+        
     }
 
     void Renderer::Render()
@@ -47,16 +60,13 @@ namespace Engine
         m_CommandList->RSSetViewports(1, &m_Viewport);
         m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
-        CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV]->GetCPUDescriptorHandleForHeapStart(), 0);
-        m_CommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
 
         m_CommandList->SetPipelineState(m_PipelineState.Get());
         m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
 
         static float angle = 0.0f;
         angle += 0.05f;
-        
+
         DirectX::SimpleMath::Matrix model = DirectX::SimpleMath::Matrix::CreateScale(1.0f)
             * DirectX::SimpleMath::Matrix::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(angle), 0.0f, 0.0f)
             * DirectX::SimpleMath::Matrix::CreateTranslation(0.0f, 0.0f, 0.0f);
@@ -94,10 +104,15 @@ namespace Engine
             DirectX::SimpleMath::Vector4 CameraPosition;
         } lightData;
 
-        lightData.LightPosition = DirectX::SimpleMath::Vector4(0.0f, 0.0f, -100.0f, 0.0f);
-        lightData.LightColor = DirectX::Colors::LightGoldenrodYellow;
+        auto lightSystem = m_Registry.view<TransformComponent, LightComponent>();
+        for (const auto [entity, transform, light] : lightSystem.each())
+        {
+            lightData.LightPosition = DirectX::SimpleMath::Vector4{transform.Translation.x, transform.Translation.y, transform.Translation.z, 1.0f};
+            lightData.LightColor = light.LightColor;
+        }
         lightData.CameraPosition = DirectX::SimpleMath::Vector4(eye.x, eye.y, eye.z, 1.0f);
 
+        
 
         m_CommandList->SetGraphicsRoot32BitConstants(1, 12, &lightData, 0);
         m_CommandList->SetDescriptorHeaps(1, m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].GetAddressOf());
@@ -109,7 +124,8 @@ namespace Engine
         m_CommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
         m_CommandList->IASetIndexBuffer(&m_IndexBufferView);
 
-
+        CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV]->GetCPUDescriptorHandleForHeapStart(), 0);
+        m_CommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
         {
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV]->GetCPUDescriptorHandleForHeapStart(),
                                                     currentBackBufferIndex + 2, m_DescriptorHeapIncrementSizes[D3D12_DESCRIPTOR_HEAP_TYPE_RTV]);
@@ -130,6 +146,7 @@ namespace Engine
         }
 
 
+        m_CommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
         {
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV]->GetCPUDescriptorHandleForHeapStart(),
                                                     m_DescriptorHeapIncrementSizes[D3D12_DESCRIPTOR_HEAP_TYPE_RTV] * currentBackBufferIndex);
