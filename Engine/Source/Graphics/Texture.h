@@ -9,6 +9,10 @@ namespace Engine
         uint32_t Width;
         uint32_t Height;
         uint32_t channelCount;
+
+        Microsoft::WRL::ComPtr<ID3D12Resource> Resource = nullptr;
+        D3D12_CPU_DESCRIPTOR_HANDLE CPUDescriptorHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE GPUDescriptorHandle;
     };
 
     class TextureLoader

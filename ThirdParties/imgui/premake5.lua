@@ -35,7 +35,7 @@ project "imgui"
    includedirs
    {
       "%{prj.location}",
-      "examples/libs/glfw/include"
+      "%{IncludeDirectories.glfw}",
    }
 
 	filter "configurations:Debug"

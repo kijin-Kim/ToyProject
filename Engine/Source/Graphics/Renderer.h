@@ -16,34 +16,47 @@ namespace Engine
     {
     public:
         using RenderCommand = std::function<void(ID3D12GraphicsCommandList*)>;
-        
+
     public:
         void Initialize(HWND windowHandle, uint32_t width, uint32_t height);
         void InitDirectX(HWND windowHandle);
         void Prepare();
         void Render();
-        
+
         void CreateCommandQueue();
         void CreateCommandList();
         void CreateDescriptorHeaps();
         void CreateSwapChain(HWND windowHandle);
         void CreateRenderTarget();
+        void CreateSceneTextures();
         void CreateFence();
         void WaitForGPU();
         void CreateVertexAndIndexBuffer();
-        void CreateTextureShaderResourceView(entt::resource<Texture> textureHandle);
         void CreatePipelineState();
 
         void LoadAssets();
         void SubmitGraphicsCommand(const RenderCommand& renderCommand);
+
+        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE DescHeapType) const
+        {
+            return m_DescriptorHeaps[DescHeapType];
+        }
+
         
-        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE DescHeapType) const { return m_DescriptorHeaps[DescHeapType]; }
+        uint32_t GetCurrentBackBufferIndex() const
+        {
+            return m_SwapChain->GetCurrentBackBufferIndex();
+        }
+        
 
     private:
         Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence = nullptr;
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue = nullptr;
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CommandAllocator = nullptr;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CommandList = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CopyCommandQueue = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CopyCommandAllocator = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CopyCommandList = nullptr;
 
         Microsoft::WRL::ComPtr<IDXGISwapChain3> m_SwapChain = nullptr;
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_SwapChainBuffers;
@@ -62,10 +75,9 @@ namespace Engine
         D3D12_VIEWPORT m_Viewport{};
         D3D12_RECT m_ScissorRect{};
         Microsoft::WRL::Wrappers::Event m_FenceEvent;
-        uint64_t m_FenceValue;
+        uint64_t m_FenceValue = 0;
         uint32_t m_Width = 1366;
         uint32_t m_Height = 768;
-        float m_DeltaTime = 0.0f;
 
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_Texture;
@@ -73,5 +85,7 @@ namespace Engine
         std::vector<uint32_t> m_Indices;
 
         std::vector<RenderCommand> m_RenderCommands;
+
+        std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_SceneColorBuffers;
     };
 }

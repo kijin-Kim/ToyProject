@@ -6,8 +6,8 @@ namespace Engine
     {
         friend class Core;
     public:
-        ID3D12Device4* GetDevice() const { return m_Device.Get(); }
-        IDXGIFactory5* GetFactory() const { return m_Factory.Get(); }
+        Microsoft::WRL::ComPtr<ID3D12Device4> GetDevice() const { return m_Device; }
+        Microsoft::WRL::ComPtr<IDXGIFactory5> GetFactory() const { return m_Factory; }
 
     private:
         RenderContext();
@@ -18,5 +18,6 @@ namespace Engine
     private:
         Microsoft::WRL::ComPtr<ID3D12Device4> m_Device = nullptr;
         Microsoft::WRL::ComPtr<IDXGIFactory5> m_Factory = nullptr;
+
     };
 }

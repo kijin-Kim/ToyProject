@@ -1,4 +1,7 @@
 #include "EditorApplication.h"
+
+#include <d3dx12.h>
+
 #include "imgui.h"
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_glfw.h"
@@ -16,10 +19,11 @@ void EditorApplication::Initialize()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports;
+    io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;
+
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
 
 
     // Setup Platform/Renderer backends
@@ -27,10 +31,22 @@ void EditorApplication::Initialize()
 
 
     // TODO:
-    ImGui_ImplDX12_Init(Engine::Core::GetRenderContext().GetDevice(), m_FrameCount,
-                        DXGI_FORMAT_R8G8B8A8_UNORM, m_DynamicDescriptorHeap.GetD3D12DescriptorHeap(),
-                        m_DynamicDescriptorHeap.GetD3D12DescriptorHeap()->GetCPUDescriptorHandleForHeapStart(),
-                        m_DynamicDescriptorHeap.GetD3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+    ImGui_ImplDX12_Init(Engine::Core::GetRenderContext().GetDevice().Get(), m_FrameCount,
+                        DXGI_FORMAT_R8G8B8A8_UNORM, m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get(),
+                        m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->GetCPUDescriptorHandleForHeapStart(),
+                        m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->GetGPUDescriptorHandleForHeapStart());
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    ImFontConfig fontConfig;
+    fontConfig.RasterizerDensity = 1.25f;
+    fontConfig.OversampleH = 2;
+    fontConfig.OversampleV = 2;
+
+    io.Fonts->Clear();
+    io.Fonts->AddFontFromFileTTF("Content/Fonts/NanumFontSetup_TTF_SQUARE/NanumSquareB.ttf", 13, &fontConfig);
+    style.ScaleAllSizes(1.25f);
 }
 
 void EditorApplication::Update()
@@ -38,9 +54,6 @@ void EditorApplication::Update()
     m_Renderer.SubmitGraphicsCommand([this](ID3D12GraphicsCommandList* commandList)
     {
         this->RenderUI();
-
-        ID3D12DescriptorHeap* descriptorHeaps[] = {m_DynamicDescriptorHeap.GetD3D12DescriptorHeap()};
-        commandList->SetDescriptorHeaps(1, descriptorHeaps);
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
     });
 
@@ -54,7 +67,9 @@ void EditorApplication::RenderUI()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    
+
+    ImGui::DockSpaceOverViewport();
+
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     bool show_demo_window;
     bool show_another_window;
@@ -97,5 +112,14 @@ void EditorApplication::RenderUI()
         ImGui::End();
     }
     // Rendering
+
+    ImGui::Begin("Viewport");
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    auto descHeap = m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(descHeap->GetGPUDescriptorHandleForHeapStart(), m_Renderer.GetCurrentBackBufferIndex() + 1,
+                                            Engine::Core::GetRenderContext().GetDevice()->GetDescriptorHandleIncrementSize(
+                                                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    ImGui::Image((void*)gpuHandle.ptr, windowSize);
+    ImGui::End();
     ImGui::Render();
 }

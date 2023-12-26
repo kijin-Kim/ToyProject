@@ -3,7 +3,6 @@
 #include <stb_image.h>
 #include <entt/entt.hpp>
 
-
 namespace Engine
 {
     TextureLoader::result_type TextureLoader::operator()(std::string_view filePath) const
