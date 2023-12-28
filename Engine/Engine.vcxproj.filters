@@ -4,6 +4,9 @@
     <Filter Include="Core">
       <UniqueIdentifier>{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECS">
+      <UniqueIdentifier>{60E1870B-CCEA-877C-5566-9E7CC16E937C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Graphics">
       <UniqueIdentifier>{1653CE33-0220-293F-2B39-17E717655ECD}</UniqueIdentifier>
     </Filter>
@@ -19,8 +22,15 @@
     <ClInclude Include="Source\Core\RenderContext.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\ECS\Components.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine.h" />
     <ClInclude Include="Source\EnginePCH.h" />
     <ClInclude Include="Source\Graphics\DynamicDescriptorHeap.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Graphics\GraphicsHelper.h">
       <Filter>Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Graphics\GraphicsTypes.h">
@@ -47,8 +57,14 @@
     <ClCompile Include="Source\Core\RenderContext.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Components.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
     <ClCompile Include="Source\EnginePCH.cpp" />
     <ClCompile Include="Source\Graphics\DynamicDescriptorHeap.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\GraphicsHelper.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Mesh.cpp">

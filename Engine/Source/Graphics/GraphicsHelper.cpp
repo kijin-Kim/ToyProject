@@ -3,6 +3,7 @@
 
 #include <wrl/wrappers/corewrappers.h>
 
+#include "Engine.h"
 #include "Texture.h"
 #include "Core/Core.h"
 

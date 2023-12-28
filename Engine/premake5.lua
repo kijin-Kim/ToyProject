@@ -35,7 +35,9 @@ project "Engine"
    
    defines
    {
-      "NOMINMAX"
+      "NOMINMAX",
+      "SPDLOG_USE_STD_FORMAT",
+      "SPDLOG_COMPILED_LIB",
    }
 
    filter "configurations:Debug"

@@ -14,6 +14,9 @@ namespace Engine
 {
     class Renderer
     {
+        // TEMP
+        friend class Application;
+        
     public:
         using RenderCommand = std::function<void(ID3D12GraphicsCommandList*)>;
 
@@ -91,5 +94,8 @@ namespace Engine
 
 
         entt::registry m_Registry;
+
+    public:
+        const uint32_t m_FrameCount = 2;
     };
 }

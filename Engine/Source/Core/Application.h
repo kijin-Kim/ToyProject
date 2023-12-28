@@ -2,6 +2,8 @@
 #include <string>
 #include <windows.h>
 
+#include "Graphics/Renderer.h"
+
 struct GLFWwindow;
 
 namespace Engine
@@ -17,25 +19,25 @@ namespace Engine
         };
 
     public:
-        Application(ApplicationSpec applicationSpec);
+        explicit Application(ApplicationSpec applicationSpec);
         virtual ~Application();
         Application(const Application&) = delete;
         Application& operator=(const Application&) = delete;
         void Run();
 
-        virtual void Initialize()
-        {
-        };
+        virtual void Initialize();
         virtual void Update();
 
         HWND GetWindowHandle() const;
         float GetDeltaTime() const;
+        void OnWindowSizeChanged(int width, int height);
 
         
     private:
         float m_DeltaTime = 0.0f;
 
     protected:
+        Renderer m_Renderer{};
         GLFWwindow* m_Window = nullptr;
         ApplicationSpec m_ApplicationSpec{};
     };

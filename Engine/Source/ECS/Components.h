@@ -11,7 +11,7 @@ namespace Engine
     
     struct TransformComponent
     {
-        DirectX::SimpleMath::Vector3 Translation{0.0f, 0.0f, 0.0f};
+        DirectX::SimpleMath::Vector3 Position{0.0f, 0.0f, 0.0f};
         DirectX::SimpleMath::Vector3 Rotation{0.0f, 0.0f, 0.0f};
         DirectX::SimpleMath::Vector3 Scale{1.0f, 1.0f, 1.0f};
     };

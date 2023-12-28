@@ -20,6 +20,7 @@
 #include <windows.h>
 #include <entt/entt.hpp>
 #include <GLFW/glfw3.h>
+#include <spdlog/spdlog.h>
 #include <wrl/client.h>
 #include "d3dx12.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -28,22 +29,3 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
-
-
-
-#ifdef _DEBUG
-#define CONFIRM_ENABLED 1
-#else
-#define CONFIRM_ENABLED 0
-#endif
-
-#if CONFIRM_ENABLED == 1
-#define EG_CONFIRM(x) \
-if(!(x))\
-{\
-__debugbreak();\
-}
-#else
-#define EG_CONFIRM(x) x
-#endif
-

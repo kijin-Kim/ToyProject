@@ -1,17 +1,23 @@
 #include "EditorApplication.h"
 
 #include <d3dx12.h>
-
+#include <spdlog/spdlog.h>
 #include "imgui.h"
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_glfw.h"
 #include "Core/Core.h"
 #include "ECS/Components.h"
 
+EditorApplication::~EditorApplication()
+{
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
 void EditorApplication::Initialize()
 {
-    m_Renderer.Initialize(GetWindowHandle(), m_ApplicationSpec.Width, m_ApplicationSpec.Height);
-
+    Application::Initialize();
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -32,7 +38,7 @@ void EditorApplication::Initialize()
 
 
     // TODO:
-    ImGui_ImplDX12_Init(Engine::Core::GetRenderContext().GetDevice().Get(), m_FrameCount,
+    ImGui_ImplDX12_Init(Engine::Core::GetRenderContext().GetDevice().Get(), m_Renderer.m_FrameCount,
                         DXGI_FORMAT_R8G8B8A8_UNORM, m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get(),
                         m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->GetCPUDescriptorHandleForHeapStart(),
                         m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->GetGPUDescriptorHandleForHeapStart());
@@ -47,7 +53,6 @@ void EditorApplication::Initialize()
 
     io.Fonts->Clear();
     io.Fonts->AddFontFromFileTTF("Content/Fonts/NanumFontSetup_TTF_SQUARE/NanumSquareB.ttf", 13, &fontConfig);
-    style.ScaleAllSizes(1.25f);
 }
 
 void EditorApplication::Update()
@@ -75,7 +80,6 @@ void EditorApplication::RenderUI()
     bool show_demo_window;
     bool show_another_window;
     ImGui::ShowDemoWindow(&show_demo_window);
-    //ImGui::DockSpace()
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
@@ -126,31 +130,71 @@ void EditorApplication::RenderUI()
     ImGui::PopStyleVar(1);
 
 
-    ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_Always);
     ImGui::Begin("Hierarchy");
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
 
 
+    const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
     auto& registry = m_Renderer.GetRegister();
-    if (ImGui::TreeNode("Scene"))
+    static entt::entity selectedEntity = entt::null;
+
+
+    if (ImGui::TreeNodeEx("Scene", treeNodeFlags | ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto view = registry.view<Engine::DisplayNameComponent>();
         for (const auto [entity, displayName] : view.each())
         {
-            if (ImGui::TreeNode(displayName.Name.c_str()))
+            ImGui::PushID(entt::to_integral(entity));
+            bool bOpened = ImGui::TreeNodeEx(displayName.Name.c_str(),
+                                             selectedEntity == entity ? treeNodeFlags | ImGuiTreeNodeFlags_Selected : treeNodeFlags);
+
+            if (ImGui::IsItemClicked())
             {
-                ImGui::Text("HelloChild");
+                selectedEntity = entity;
+            }
+            if (bOpened)
+            {
+                // TODO : 자식 Entity
                 ImGui::TreePop();
             }
-            
+            ImGui::PopID();
         }
-        
+
         ImGui::TreePop();
     }
-
-
-    ImGui::PopStyleVar();
     ImGui::End();
+
+    ImGui::Begin("Inspector");
+
+    ImGui::PushID(entt::to_integral(selectedEntity));
+    if (registry.all_of<Engine::DisplayNameComponent>(selectedEntity))
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
+        if (ImGui::CollapsingHeader("DisplayName", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            
+            auto& displayName = registry.get<Engine::DisplayNameComponent>(selectedEntity);
+            displayName.Name.resize(32);
+            ImGui::InputText("Name", displayName.Name.data(), displayName.Name.size());
+        }
+        ImGui::PopStyleVar();
+        
+    }
+
+    if (registry.all_of<Engine::TransformComponent>(selectedEntity))
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto& transform = registry.get<Engine::TransformComponent>(selectedEntity);
+            ImGui::DragFloat3("Position", &transform.Position.x);
+            
+        }
+        ImGui::PopStyleVar();
+    }
+    ImGui::PopID();
+
+    ImGui::End();
+
 
     ImGui::Render();
 }

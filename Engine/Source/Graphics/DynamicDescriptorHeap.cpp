@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "DynamicDescriptorHeap.h"
 
+#include "Engine.h"
 #include "Core/Core.h"
 
 namespace Engine

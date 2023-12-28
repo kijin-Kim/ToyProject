@@ -44,7 +44,9 @@ project "Editor"
 
    defines
    {
-      "NOMINMAX"
+      "NOMINMAX",
+      "SPDLOG_USE_STD_FORMAT",
+      "SPDLOG_COMPILED_LIB",
    }
 
    filter "configurations:Debug"
@@ -58,7 +60,6 @@ project "Editor"
       postbuildcommands
       {
          '{COPY} "%{Libraries.assimpd}.dll" "%{cfg.targetdir}"',
-         '{COPY} "%{Libraries.spdlogd}.dll" "%{cfg.targetdir}"',
       }
 
    
@@ -74,7 +75,6 @@ project "Editor"
       postbuildcommands
       {
          '{COPY} "%{Libraries.assimp}.dll" "%{cfg.targetdir}"',
-         '{COPY} "%{Libraries.spdlog}.dll" "%{cfg.targetdir}"',
       }
    
 

@@ -3,6 +3,7 @@
 
 #include "AssetManager.h"
 #include "d3dx12.h"
+#include "Engine.h"
 #include "GraphicsHelper.h"
 #include "Mesh.h"
 #include "Core/Core.h"
@@ -39,15 +40,22 @@ namespace Engine
         CreateVertexAndIndexBuffer();
 
 
-        const auto lightEntity = m_Registry.create();
-        auto& transform = m_Registry.emplace<TransformComponent>(lightEntity);
-        auto& light = m_Registry.emplace<LightComponent>(lightEntity);
-        auto& displayName = m_Registry.emplace<DisplayNameComponent>(lightEntity);
+        {
+            const auto lightEntity = m_Registry.create();
+            auto& displayName = m_Registry.emplace<DisplayNameComponent>(lightEntity);
+            auto& transform = m_Registry.emplace<TransformComponent>(lightEntity);
+            auto& light = m_Registry.emplace<LightComponent>(lightEntity);
 
-        displayName.Name = "Light";
-        transform.Translation = DirectX::SimpleMath::Vector3{ 0.0f, 0.0f, -100.0f };
-        light.LightColor = DirectX::Colors::LightGoldenrodYellow;
-        
+            displayName.Name = "Light";
+            transform.Position = DirectX::SimpleMath::Vector3{0.0f, 0.0f, -100.0f};
+            light.LightColor = DirectX::Colors::LightGoldenrodYellow;
+        }
+
+        {
+            const auto StaticMeshEntity = m_Registry.create();
+            auto& displayName = m_Registry.emplace<DisplayNameComponent>(StaticMeshEntity);
+            displayName.Name = "StaticMesh";
+        }
     }
 
     void Renderer::Render()
@@ -107,12 +115,11 @@ namespace Engine
         auto lightSystem = m_Registry.view<TransformComponent, LightComponent>();
         for (const auto [entity, transform, light] : lightSystem.each())
         {
-            lightData.LightPosition = DirectX::SimpleMath::Vector4{transform.Translation.x, transform.Translation.y, transform.Translation.z, 1.0f};
+            lightData.LightPosition = DirectX::SimpleMath::Vector4{transform.Position.x, transform.Position.y, transform.Position.z, 1.0f};
             lightData.LightColor = light.LightColor;
         }
         lightData.CameraPosition = DirectX::SimpleMath::Vector4(eye.x, eye.y, eye.z, 1.0f);
 
-        
 
         m_CommandList->SetGraphicsRoot32BitConstants(1, 12, &lightData, 0);
         m_CommandList->SetDescriptorHeaps(1, m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].GetAddressOf());
@@ -249,7 +256,6 @@ namespace Engine
 
     void Renderer::CreateSwapChain(HWND windowHandle)
     {
-        const uint32_t swapChainBufferCount = 2;
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
         swapChainDesc.Width = m_Width;
         swapChainDesc.Height = m_Height;
@@ -258,15 +264,13 @@ namespace Engine
         swapChainDesc.SampleDesc.Count = 1;
         swapChainDesc.SampleDesc.Quality = 0;
         swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
-        swapChainDesc.BufferCount = swapChainBufferCount;
+        swapChainDesc.BufferCount = m_FrameCount;
         swapChainDesc.Scaling = DXGI_SCALING_NONE;
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         swapChainDesc.Flags = 0;
         Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain = nullptr;
-        EG_CONFIRM(
-            SUCCEEDED(Core::GetRenderContext().GetFactory()->CreateSwapChainForHwnd(m_CommandQueue.Get(), windowHandle, &swapChainDesc, nullptr,
-                nullptr, &swapChain)));
+        EG_CONFIRM(SUCCEEDED(Core::GetRenderContext().GetFactory()->CreateSwapChainForHwnd(m_CommandQueue.Get(), windowHandle, &swapChainDesc, nullptr, nullptr, &swapChain)));
         EG_CONFIRM(SUCCEEDED(swapChain.As(&m_SwapChain)));
         EG_CONFIRM(SUCCEEDED(Core::GetRenderContext().GetFactory()->MakeWindowAssociation(windowHandle, DXGI_MWA_NO_ALT_ENTER)));
 
@@ -276,18 +280,17 @@ namespace Engine
             m_DescriptorHeapIncrementSizes[i] = Core::GetRenderContext().GetDevice()->GetDescriptorHandleIncrementSize(
                 static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(i));
         }
-
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV]->GetCPUDescriptorHandleForHeapStart(), 0);
-        m_SwapChainBuffers.resize(swapChainBufferCount);
-        for (uint32_t i = 0; i < swapChainBufferCount; ++i)
-        {
-            EG_CONFIRM(SUCCEEDED(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&m_SwapChainBuffers[i]))));
-        }
     }
 
     void Renderer::CreateRenderTarget()
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV]->GetCPUDescriptorHandleForHeapStart(), 0);
+        m_SwapChainBuffers.resize(m_FrameCount);
+        for (uint32_t i = 0; i < m_FrameCount; ++i)
+        {
+            EG_CONFIRM(SUCCEEDED(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&m_SwapChainBuffers[i]))));
+        }
+
         for (const auto& buffer : m_SwapChainBuffers)
         {
             Core::GetRenderContext().GetDevice()->CreateRenderTargetView(buffer.Get(), nullptr, rtvHeapHandle);
@@ -304,12 +307,12 @@ namespace Engine
         Core::GetRenderContext().GetDevice()->CreateDepthStencilView(m_DepthStencilBuffer.Get(), nullptr, dsvHeapHandle);
 
         m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(m_Width), static_cast<float>(m_Height));
-        m_ScissorRect = CD3DX12_RECT(0, 0, m_Width, m_Height);
+        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<int32_t>(m_Width), static_cast<int32_t>(m_Height));
     }
 
     void Renderer::CreateSceneTextures()
     {
-        m_SceneColorBuffers.resize(2);
+        m_SceneColorBuffers.resize(m_FrameCount);
 
         for (int i = 0; i < m_SwapChainBuffers.size(); ++i)
         {
@@ -444,7 +447,8 @@ namespace Engine
                 "vs_5_1", compileFlags, 0, vsBlob.GetAddressOf(), vsErrorBlob.GetAddressOf()));
         if (vsErrorBlob->GetBufferSize() > 0)
         {
-            OutputDebugStringA((LPCSTR)vsErrorBlob->GetBufferPointer());
+            const std::string_view msg{static_cast<char*>(vsErrorBlob->GetBufferPointer()), vsErrorBlob->GetBufferSize()};
+            spdlog::warn(msg);
         }
 
 
@@ -455,8 +459,8 @@ namespace Engine
                 "ps_5_1", compileFlags, 0, psBlob.GetAddressOf(), psErrorBlob.GetAddressOf()));
         if (psErrorBlob->GetBufferSize() > 0)
         {
-            // TODO: SPDLOG
-            OutputDebugStringA((LPCSTR)psErrorBlob->GetBufferPointer());
+            const std::string_view msg{static_cast<char*>(psErrorBlob->GetBufferPointer()), psErrorBlob->GetBufferSize()};
+            spdlog::warn(msg);
         };
 
 
@@ -506,7 +510,8 @@ namespace Engine
                                D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
         if (FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSignatureBlob, &errorBlob)))
         {
-            //spdlog::debug("{}", std::string(static_cast<char*>(errorBlob->GetBufferPointer())));
+            const std::string_view msg{static_cast<char*>(vsErrorBlob->GetBufferPointer()), vsErrorBlob->GetBufferSize()};
+            spdlog::error(msg);
             EG_CONFIRM(false);
         }
         EG_CONFIRM(
