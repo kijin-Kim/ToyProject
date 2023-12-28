@@ -25,7 +25,7 @@ VS_OUTPUT main(VS_INPUT input)
 	VS_OUTPUT output;
 	output.WorldPosition = mul(float4(input.Position, 1.0f), MatGeo).xyz;
 	output.Position = mul(float4(output.WorldPosition, 1.0f), MatVP);
-	float3x3 InvTransposeGeo = transpose(MatGeoInvert);
+	float3x3 InvTransposeGeo = (float3x3)transpose(MatGeoInvert);
 	output.WorldNormal = normalize(mul(input.Normal, (float3x3)InvTransposeGeo));
 	output.TexCoord = input.TexCoord;
 	return output;

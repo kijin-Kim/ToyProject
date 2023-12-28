@@ -5,6 +5,12 @@
 
 namespace Engine
 {
+    entt::resource<Shader> AssetManager::LoadShader(const entt::id_type id, std::wstring_view filePath, ShaderType shaderType)
+    {
+        static entt::resource_cache<Shader, ShaderLoader> resourceCache{};
+        return resourceCache.load(id, filePath, shaderType).first->second;
+    }
+
     entt::resource<Texture> AssetManager::LoadTexture(const entt::id_type id, std::string_view filePath)
     {
         static entt::resource_cache<Texture, TextureLoader> resourceCache{};

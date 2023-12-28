@@ -95,6 +95,8 @@ namespace Engine
 
         entt::registry m_Registry;
 
+        
+
     public:
         const uint32_t m_FrameCount = 2;
     };
