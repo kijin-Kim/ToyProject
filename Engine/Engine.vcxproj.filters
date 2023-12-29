@@ -42,6 +42,9 @@
     <ClInclude Include="Source\Graphics\Renderer.h">
       <Filter>Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Graphics\Shader.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Graphics\Texture.h">
       <Filter>Graphics</Filter>
     </ClInclude>
@@ -71,6 +74,9 @@
       <Filter>Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Renderer.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Graphics\Shader.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Graphics\Texture.cpp">

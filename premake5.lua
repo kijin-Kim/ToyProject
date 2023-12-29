@@ -32,14 +32,15 @@ project "Editor"
       "%{IncludeDirectories.assimp}",
       "%{IncludeDirectories.stb_image}",
       "%{IncludeDirectories.spdlog}",
-      "%{IncludeDirectories.DirectX}",
+      "%{IncludeDirectories.DirectXTK}",
       "%{IncludeDirectories.imgui}",
    }
 
    links
    {
       "Engine", 
-      "imgui"
+      "imgui",
+      "DirectXTK"
    }
 
    defines

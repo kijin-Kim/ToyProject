@@ -1,8 +1,12 @@
 #include "EditorApplication.h"
 
 #include <d3dx12.h>
+#include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
+
+#include "Engine.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_glfw.h"
 #include "Core/Core.h"
@@ -45,6 +49,8 @@ void EditorApplication::Initialize()
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
+    style.FrameBorderSize = 1.0f;
+    style.FrameRounding = 4.0f;
 
     ImFontConfig fontConfig;
     fontConfig.RasterizerDensity = 1.25f;
@@ -57,14 +63,79 @@ void EditorApplication::Initialize()
 
 void EditorApplication::Update()
 {
+    if (glfwGetKey(m_Window, GLFW_KEY_W))
+    {
+        m_Velocity = m_Renderer.m_CameraForward * 50.0f;
+    }
+
+    if (glfwGetKey(m_Window, GLFW_KEY_S))
+    {
+        m_Velocity = -m_Renderer.m_CameraForward * 50.0f;
+    }
+    if (glfwGetKey(m_Window, GLFW_KEY_D))
+    {
+        m_Velocity = m_Renderer.m_CameraRight * 50.0f;
+    }
+    if (glfwGetKey(m_Window, GLFW_KEY_A))
+    {
+        m_Velocity = -m_Renderer.m_CameraRight * 50.0f;
+    }
+    
+
+    m_Velocity *= 0.93f;
+    m_Renderer.m_CameraPosition += m_Velocity * m_Timer.GetDeltaSeconds();
+    m_Acceleration = DirectX::SimpleMath::Vector3::Zero;
+
+
     m_Renderer.SubmitGraphicsCommand([this](ID3D12GraphicsCommandList* commandList)
     {
         this->RenderUI();
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
     });
 
-
     m_Renderer.Render();
+}
+
+void EditorApplication::OnCursorPosEvent(double xPos, double yPos)
+{
+    Application::OnCursorPosEvent(xPos, yPos);
+    spdlog::info("CursorPosEvent: X: {}, Y: {}", xPos, yPos);
+
+    static bool bWasRightButton = false;
+    static double lastX = 0;
+    static double lastY = 0;
+
+
+    if (!glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) || !bIsViewportFocused)
+    {
+        bWasRightButton = false;
+        lastX = xPos;
+        lastY = yPos;
+        return;
+    }
+
+
+    const double deltaX = (xPos - lastX);
+    const double deltaY = (yPos - lastY);
+
+    static double yaw = 0;
+    static double pitch = 0;
+    yaw += deltaX * 15.0f * m_Timer.GetDeltaSeconds();
+    pitch += deltaY * 15.0f * m_Timer.GetDeltaSeconds();
+
+    m_Renderer.m_CameraForward = DirectX::SimpleMath::Vector3::TransformNormal(DirectX::SimpleMath::Vector3::UnitZ, DirectX::SimpleMath::Matrix::CreateFromQuaternion(DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(yaw), DirectX::XMConvertToRadians(pitch), 0.0f)));
+    m_Renderer.m_CameraUp = DirectX::SimpleMath::Vector3::TransformNormal(DirectX::SimpleMath::Vector3::UnitY, DirectX::SimpleMath::Matrix::CreateFromQuaternion(DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(yaw), DirectX::XMConvertToRadians(pitch), 0.0f)));
+    m_Renderer.m_CameraRight = m_Renderer.m_CameraUp.Cross(m_Renderer.m_CameraForward);
+
+    lastX = xPos;
+    lastY = yPos;
+}
+
+void EditorApplication::OnWindowFocusEvent(bool bIsWindowFocused)
+{
+    Application::OnWindowFocusEvent(bIsWindowFocused);
+    spdlog::info("WindowFocusEvent: IsWindowFocused: {}", bIsWindowFocused);
+    m_bIsWindowFocused = bIsWindowFocused;
 }
 
 void EditorApplication::RenderUI()
@@ -76,62 +147,49 @@ void EditorApplication::RenderUI()
 
     ImGui::DockSpaceOverViewport();
 
+    ImGui::Begin("Content Browser");
+    if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered())
+    {
+        ImGui::SetWindowFocus();
+    }
+
+    ImGui::End();
+
+
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     bool show_demo_window;
-    bool show_another_window;
     ImGui::ShowDemoWindow(&show_demo_window);
-
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    {
-        static float f = 0.0f;
-        static int counter = 0;
-
-        ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-        ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-        //		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGuiIO& io = ImGui::GetIO();
-        (void)io;
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
-    }
-
-    // 3. Show another simple window.
-    if (show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);
-        // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
-    }
-    // Rendering
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoScrollbar;
     ImGui::Begin("Viewport", nullptr, windowFlags);
     auto descHeap = m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(descHeap->GetGPUDescriptorHandleForHeapStart(), m_Renderer.GetCurrentBackBufferIndex() + 1,
-                                            Engine::Core::GetRenderContext().GetDevice()->GetDescriptorHandleIncrementSize(
-                                                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+    CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(descHeap->GetGPUDescriptorHandleForHeapStart(), m_Renderer.GetCurrentBackBufferIndex() + 1, Engine::Core::GetRenderContext().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
     ImGui::Image((void*)gpuHandle.ptr, ImGui::GetWindowSize());
+    m_Renderer.m_AspectRatio = ImGui::GetWindowSize().x / ImGui::GetWindowSize().y;
+
+    if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered())
+    {
+        ImGui::SetWindowFocus();
+    }
+    if (ImGui::IsWindowFocused())
+    {
+        bIsViewportFocused = true;
+    }
+    else
+    {
+        bIsViewportFocused = false;
+    }
+
     ImGui::End();
     ImGui::PopStyleVar(1);
 
 
     ImGui::Begin("Hierarchy");
-
+    if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered())
+    {
+        ImGui::SetWindowFocus();
+    }
 
     const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
     auto& registry = m_Renderer.GetRegister();
@@ -164,37 +222,86 @@ void EditorApplication::RenderUI()
     ImGui::End();
 
     ImGui::Begin("Inspector");
+    if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered())
+    {
+        ImGui::SetWindowFocus();
+    }
 
     ImGui::PushID(entt::to_integral(selectedEntity));
     if (registry.all_of<Engine::DisplayNameComponent>(selectedEntity))
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
         if (ImGui::CollapsingHeader("DisplayName", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            
+            ImGui::Spacing();
             auto& displayName = registry.get<Engine::DisplayNameComponent>(selectedEntity);
             displayName.Name.resize(32);
-            ImGui::InputText("Name", displayName.Name.data(), displayName.Name.size());
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 2.0f));
+            ImGui::Indent();
+            ImGui::Text("DisplayName");
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.5f);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::InputText("##Name", displayName.Name.data(), displayName.Name.size());
+            ImGui::PopItemWidth();
+            ImGui::Unindent();
+            ImGui::PopStyleVar();
+            ImGui::Spacing();
         }
-        ImGui::PopStyleVar();
-        
     }
-
     if (registry.all_of<Engine::TransformComponent>(selectedEntity))
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            ImGui::Spacing();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 2.0f));
             auto& transform = registry.get<Engine::TransformComponent>(selectedEntity);
-            ImGui::DragFloat3("Position", &transform.Position.x);
-            
+            ImGui::Indent();
+            ImGui::Text("Position");
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.5f);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::DragFloat3("##P", &transform.Position.x);
+            ImGui::PopItemWidth();
+
+            ImGui::Text("Rotation");
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.5f);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::DragFloat3("##R", &transform.Rotation.x);
+            ImGui::PopItemWidth();
+
+            ImGui::Text("Scale");
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.5f);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::DragFloat3("##S", &transform.Scale.x);
+            ImGui::PopItemWidth();
+
+            ImGui::Unindent();
+            ImGui::PopStyleVar();
+            ImGui::Spacing();
         }
-        ImGui::PopStyleVar();
     }
+
+    if (registry.all_of<Engine::LightComponent>(selectedEntity))
+    {
+        if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Spacing();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 2.0f));
+            auto& light = registry.get<Engine::LightComponent>(selectedEntity);
+            ImGui::Indent();
+            ImGui::Text("Light Color");
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.5f);
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::ColorEdit3("##C", &light.LightColor.x);
+            ImGui::PopItemWidth();
+
+            ImGui::Unindent();
+            ImGui::PopStyleVar();
+            ImGui::Spacing();
+        }
+    }
+
     ImGui::PopID();
-
     ImGui::End();
-
-
     ImGui::Render();
 }

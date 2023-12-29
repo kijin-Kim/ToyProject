@@ -24,6 +24,7 @@
 #include <wrl/client.h>
 #include "d3dx12.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
+#include <SimpleMath.h>
 #include <GLFW/glfw3native.h>
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "d3dcompiler.lib")

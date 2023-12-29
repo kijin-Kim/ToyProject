@@ -31,13 +31,17 @@ namespace Engine
         CreateSwapChain(windowHandle);
         CreateRenderTarget();
         CreateFence();
+
+        m_AspectRatio = m_Width / static_cast<float>(m_Height);
+        m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, m_Width, m_Height);
+        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<int32_t>(m_Width), static_cast<int32_t>(m_Height));
     }
 
     void Renderer::Prepare()
     {
         LoadAssets();
         CreatePipelineState();
-        CreateSceneTextures();
+        CreateSceneTextures(m_Width, m_Height);
         CreateVertexAndIndexBuffer();
 
 
@@ -48,7 +52,7 @@ namespace Engine
             auto& light = m_Registry.emplace<LightComponent>(lightEntity);
 
             displayName.Name = "Light";
-            transform.Position = DirectX::SimpleMath::Vector3{0.0f, 0.0f, -100.0f};
+            transform.Rotation = DirectX::SimpleMath::Vector3{0.0f, 0.0f, 0.0f};
             light.LightColor = DirectX::Colors::LightGoldenrodYellow;
         }
 
@@ -79,16 +83,14 @@ namespace Engine
         DirectX::SimpleMath::Matrix model = DirectX::SimpleMath::Matrix::CreateScale(1.0f) * DirectX::SimpleMath::Matrix::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(angle), 0.0f, 0.0f) * DirectX::SimpleMath::Matrix::CreateTranslation(0.0f, 0.0f, 0.0f);
 
 
-        constexpr DirectX::SimpleMath::Vector3 eye = {0.0f, 0.0f, -40.0f};
-        constexpr DirectX::SimpleMath::Vector3 target = {0.0f, 0.0f, 0.0f};
-        constexpr DirectX::SimpleMath::Vector3 up = {0.0f, 1.0f, 0.0f};
-        const DirectX::SimpleMath::Matrix view = XMMatrixLookAtLH(eye, target, up);
+        const DirectX::SimpleMath::Matrix view = XMMatrixLookToLH(m_CameraPosition, m_CameraForward, m_CameraUp);
 
-        constexpr float fieldOfView = DirectX::XMConvertToRadians(90.0f);
-        const float aspectRatio = m_Width / static_cast<float>(m_Height);
+
+        constexpr float fieldOfView = DirectX::XMConvertToRadians(60.0f);
+        
         constexpr float nearPlane = 0.1f;
         constexpr float farPlane = 1000.0f;
-        const DirectX::SimpleMath::Matrix projection = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, aspectRatio, nearPlane, farPlane);
+        const DirectX::SimpleMath::Matrix projection = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, m_AspectRatio, nearPlane, farPlane);
         DirectX::SimpleMath::Matrix viewProjection = view * projection;
 
         struct TransformData
@@ -106,7 +108,7 @@ namespace Engine
 
         struct LightData
         {
-            DirectX::SimpleMath::Vector4 LightPosition;
+            DirectX::SimpleMath::Vector4 LightDirection;
             DirectX::SimpleMath::Color LightColor;
             DirectX::SimpleMath::Vector4 CameraPosition;
         } lightData;
@@ -114,10 +116,12 @@ namespace Engine
         auto lightSystem = m_Registry.view<TransformComponent, LightComponent>();
         for (const auto [entity, transform, light] : lightSystem.each())
         {
-            lightData.LightPosition = DirectX::SimpleMath::Vector4{transform.Position.x, transform.Position.y, transform.Position.z, 1.0f};
+            DirectX::SimpleMath::Quaternion q = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(transform.Rotation.y), DirectX::XMConvertToRadians(transform.Rotation.x), DirectX::XMConvertToRadians(transform.Rotation.z));
+            DirectX::SimpleMath::Vector3 direction = DirectX::SimpleMath::Vector3::Transform(DirectX::SimpleMath::Vector3::UnitZ, q);
+            lightData.LightDirection = DirectX::SimpleMath::Vector4{direction.x, direction.y, direction.z, 1.0f};
             lightData.LightColor = light.LightColor;
         }
-        lightData.CameraPosition = DirectX::SimpleMath::Vector4(eye.x, eye.y, eye.z, 1.0f);
+        lightData.CameraPosition = DirectX::SimpleMath::Vector4(m_CameraPosition.x, m_CameraPosition.y, m_CameraPosition.z, 1.0f);
 
 
         m_CommandList->SetGraphicsRoot32BitConstants(1, 12, &lightData, 0);
@@ -282,23 +286,23 @@ namespace Engine
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHeapHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV]->GetCPUDescriptorHandleForHeapStart(), 0);
         Core::GetRenderContext().GetDevice()->CreateDepthStencilView(m_DepthStencilBuffer.Get(), nullptr, dsvHeapHandle);
-
-        m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(m_Width), static_cast<float>(m_Height));
-        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<int32_t>(m_Width), static_cast<int32_t>(m_Height));
+        
     }
 
-    void Renderer::CreateSceneTextures()
+    void Renderer::CreateSceneTextures(int width, int height)
     {
         m_SceneColorBuffers.resize(m_FrameCount);
 
         for (int i = 0; i < m_SwapChainBuffers.size(); ++i)
         {
             auto textureDesc = m_SwapChainBuffers[i]->GetDesc();
+            textureDesc.Width = width;
+            textureDesc.Height = height;
             const auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
             D3D12_CLEAR_VALUE clearValue;
             clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            EG_CONFIRM(SUCCEEDED(Core::GetRenderContext().GetDevice()->CreateCommittedResource( &heapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_COMMON, & clearValue, IID_PPV_ARGS(&m_SceneColorBuffers[i]))));
+            EG_CONFIRM(SUCCEEDED(Core::GetRenderContext().GetDevice()->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_COMMON, & clearValue, IID_PPV_ARGS(&m_SceneColorBuffers[i]))));
             std::wstring name = L"SceneColor_" + std::to_wstring(i);
             m_SceneColorBuffers[i]->SetName(name.c_str());
 
@@ -445,7 +449,7 @@ namespace Engine
 
         std::vector<D3D12_INPUT_ELEMENT_DESC> InputElements = {{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}, {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}, {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},};
 
-        
+
         pipelinStateSteam.RootSignature = m_RootSignature.Get();
         pipelinStateSteam.InputLayout = {InputElements.data(), static_cast<uint32_t>(InputElements.size())};
         pipelinStateSteam.VS = {vertexShaderHandle->Blob->GetBufferPointer(), vertexShaderHandle->Blob->GetBufferSize()};

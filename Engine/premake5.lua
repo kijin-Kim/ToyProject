@@ -25,12 +25,13 @@ project "Engine"
       "%{IncludeDirectories.assimp}",
       "%{IncludeDirectories.stb_image}",
       "%{IncludeDirectories.spdlog}",
-      "%{IncludeDirectories.DirectX}",
+      "%{IncludeDirectories.DirectXTK}",
    }
 
    links
    {
       "%{Libraries.glfw}",
+      "DirectXTK"
    }
    
    defines
@@ -49,3 +50,7 @@ project "Engine"
       runtime "Release"
       optimize "On"
       symbols "Off"
+
+   group "ThirdParties"
+      include "ThirdParties/DirectXTK"
+   group ""

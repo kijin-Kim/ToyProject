@@ -1,6 +1,6 @@
 cbuffer LightData : register(b1, space0)
 {
-    float4 LightPosition;
+    float4 LightDirection;
 	float4 LightColor;
     float4 CameraPosition;
 };
@@ -26,7 +26,7 @@ float4 main(PS_INPUT input) : SV_TARGET
    
     const float diffuseStrength = 0.5f;
     const float3 n = normalize(input.WorldNormal);
-    const float3 l = normalize(LightPosition.xyz - input.WorldPosition);
+    const float3 l = -LightDirection.xyz; // FROMLIGHT to TOLIGHT
     const float nDotL = dot(n, l);
     const float3 diffuse = saturate(max(nDotL, 0.0f) * LightColor * diffuseStrength).rgb;
     

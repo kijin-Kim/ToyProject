@@ -5,7 +5,7 @@
 
 namespace Engine
 {
-    ShaderLoader::result_type ShaderLoader::operator()(std::wstring_view filePath, ShaderType shaderType) const
+    ShaderLoader::result_type ShaderLoader::operator()(std::wstring_view filePath, ShaderType shaderType) const 
     {
         std::string shaderTypeString;
         switch (shaderType)
@@ -22,7 +22,7 @@ namespace Engine
 #ifdef _DEBUG
         compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
-        compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION | D3DCOMPILE_SKIP_VALIDATION | D3DCOMPILE_AVOID_FLOW_CONTROL; 
+        compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_PARTIAL_PRECISION | D3DCOMPILE_SKIP_VALIDATION; 
 #endif
 
 

@@ -16,7 +16,7 @@ namespace Engine
     {
         // TEMP
         friend class Application;
-        
+
     public:
         using RenderCommand = std::function<void(ID3D12GraphicsCommandList*)>;
 
@@ -31,7 +31,7 @@ namespace Engine
         void CreateDescriptorHeaps();
         void CreateSwapChain(HWND windowHandle);
         void CreateRenderTarget();
-        void CreateSceneTextures();
+        void CreateSceneTextures(int width, int height);
         void CreateFence();
         void WaitForGPU();
         void CreateVertexAndIndexBuffer();
@@ -45,7 +45,7 @@ namespace Engine
             return m_DescriptorHeaps[DescHeapType];
         }
 
-        
+
         uint32_t GetCurrentBackBufferIndex() const
         {
             return m_SwapChain->GetCurrentBackBufferIndex();
@@ -53,7 +53,7 @@ namespace Engine
 
         entt::registry& GetRegister() { return m_Registry; }
 
-    private:
+    public:
         Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence = nullptr;
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue = nullptr;
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CommandAllocator = nullptr;
@@ -78,6 +78,10 @@ namespace Engine
 
         D3D12_VIEWPORT m_Viewport{};
         D3D12_RECT m_ScissorRect{};
+
+        
+
+        
         Microsoft::WRL::Wrappers::Event m_FenceEvent;
         uint64_t m_FenceValue = 0;
         uint32_t m_Width = 1366;
@@ -95,9 +99,13 @@ namespace Engine
 
         entt::registry m_Registry;
 
-        
-
-    public:
         const uint32_t m_FrameCount = 2;
+        DirectX::SimpleMath::Vector3 m_CameraPosition = DirectX::SimpleMath::Vector3{0.0f, 10.0f, -40.0f};
+        DirectX::SimpleMath::Vector3 m_CameraForward = DirectX::SimpleMath::Vector3::UnitZ;
+        DirectX::SimpleMath::Vector3 m_CameraRight = DirectX::SimpleMath::Vector3::UnitX;
+        DirectX::SimpleMath::Vector3 m_CameraUp = DirectX::SimpleMath::Vector3::UnitY;
+
+        float m_AspectRatio;
+        
     };
 }

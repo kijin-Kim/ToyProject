@@ -4,7 +4,7 @@ IncludeDirectories["entt"] = "%{wks.location}/Engine/ThirdParties/entt-3.12.2/si
 IncludeDirectories["assimp"] = "%{wks.location}/Engine/ThirdParties/assimp/include"
 IncludeDirectories["stb_image"] = "%{wks.location}/Engine/ThirdParties/stb_image"
 IncludeDirectories["spdlog"] = "%{wks.location}/Engine/ThirdParties/spdlog/include"
-IncludeDirectories["DirectX"] = "%{wks.location}/Engine/ThirdParties/DirectX"
+IncludeDirectories["DirectXTK"] = "%{wks.location}/Engine/ThirdParties/DirectXTK"
 IncludeDirectories["imgui"] = "%{wks.location}/ThirdParties/imgui"
 
 

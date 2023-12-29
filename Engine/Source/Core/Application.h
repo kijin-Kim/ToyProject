@@ -2,6 +2,7 @@
 #include <string>
 #include <windows.h>
 
+#include "Timer.h"
 #include "Graphics/Renderer.h"
 
 struct GLFWwindow;
@@ -21,6 +22,7 @@ namespace Engine
     public:
         explicit Application(ApplicationSpec applicationSpec);
         virtual ~Application();
+
         Application(const Application&) = delete;
         Application& operator=(const Application&) = delete;
         void Run();
@@ -29,16 +31,17 @@ namespace Engine
         virtual void Update();
 
         HWND GetWindowHandle() const;
-        float GetDeltaTime() const;
-        void OnWindowSizeChanged(int width, int height);
-
+        virtual void OnWindowSizeEvent(int width, int height);
+        virtual void OnKeyEvent(int key, int scanCode, int action, int mods);
+        virtual void OnCursorPosEvent(double xPos, double yPos);
+        virtual void OnWindowFocusEvent(bool bIsWindowFocused);
         
-    private:
-        float m_DeltaTime = 0.0f;
 
     protected:
         Renderer m_Renderer{};
         GLFWwindow* m_Window = nullptr;
         ApplicationSpec m_ApplicationSpec{};
+        Timer m_Timer;
+        bool m_bIsWindowFocused = false;
     };
 }
