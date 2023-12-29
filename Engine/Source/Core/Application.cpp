@@ -104,6 +104,11 @@ namespace Engine
 
     void Application::OnWindowSizeEvent(int width, int height)
     {
+        if(width == 0 || height == 0)
+        {
+            return;
+        }
+        
         const GLFWmonitor* monitor = glfwGetWindowMonitor(m_Window);
         m_Renderer.m_SwapChain->SetFullscreenState(monitor ? TRUE : FALSE, nullptr);
         spdlog::info("WindowSizeEvent: Width: {}, Height:{}", width, height);
@@ -137,6 +142,7 @@ namespace Engine
 
     void Application::OnWindowFocusEvent(bool bIsWindowFocused)
     {
+        spdlog::info("WindowFocusEvent: IsWindowFocused: {}", bIsWindowFocused);
     }
 
     void Application::OnScrollEvent(double xOffset, double yOffsets)

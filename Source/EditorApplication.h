@@ -15,6 +15,7 @@ public:
     ~EditorApplication() override;
 
     void Initialize() override;
+    void HandleCameraMovement();
     void Update() override;
     
     void OnCursorPosEvent(double xPos, double yPos) override;
@@ -27,7 +28,7 @@ private:
 
 private:
     Microsoft::WRL::ComPtr<ID3D12Resource> m_RTVResource = nullptr;
-    bool bIsViewportFocused = false;
+    bool m_bIsViewportFocused = false;
 
 
     DirectX::SimpleMath::Vector3 m_Velocity;

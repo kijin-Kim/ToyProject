@@ -61,40 +61,45 @@ void EditorApplication::Initialize()
     io.Fonts->AddFontFromFileTTF("Content/Fonts/NanumFontSetup_TTF_SQUARE/NanumSquareB.ttf", 13, &fontConfig);
 }
 
-void EditorApplication::Update()
+void EditorApplication::HandleCameraMovement()
 {
-    if (glfwGetKey(m_Window, GLFW_KEY_W))
+    if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) && m_bIsViewportFocused)
     {
-        m_Velocity = m_Renderer.m_CameraForward * 80.0f;
-    }
+        if (glfwGetKey(m_Window, GLFW_KEY_W))
+        {
+            m_Velocity = m_Renderer.m_CameraForward * 80.0f;
+        }
 
-    if (glfwGetKey(m_Window, GLFW_KEY_S))
-    {
-        m_Velocity = -m_Renderer.m_CameraForward * 80.0f;
-    }
-    if (glfwGetKey(m_Window, GLFW_KEY_D))
-    {
-        m_Velocity = m_Renderer.m_CameraRight * 80.0f;
-    }
-    if (glfwGetKey(m_Window, GLFW_KEY_A))
-    {
-        m_Velocity = -m_Renderer.m_CameraRight * 80.0f;
-    }
-    if (glfwGetKey(m_Window, GLFW_KEY_E))
-    {
-        m_Velocity = m_Renderer.m_CameraUp * 80.0f;
-    }
-    if (glfwGetKey(m_Window, GLFW_KEY_Q))
-    {
-        m_Velocity = -m_Renderer.m_CameraUp * 80.0f;
+        if (glfwGetKey(m_Window, GLFW_KEY_S))
+        {
+            m_Velocity = -m_Renderer.m_CameraForward * 80.0f;
+        }
+        if (glfwGetKey(m_Window, GLFW_KEY_D))
+        {
+            m_Velocity = m_Renderer.m_CameraRight * 80.0f;
+        }
+        if (glfwGetKey(m_Window, GLFW_KEY_A))
+        {
+            m_Velocity = -m_Renderer.m_CameraRight * 80.0f;
+        }
+        if (glfwGetKey(m_Window, GLFW_KEY_E))
+        {
+            m_Velocity = m_Renderer.m_CameraUp * 80.0f;
+        }
+        if (glfwGetKey(m_Window, GLFW_KEY_Q))
+        {
+            m_Velocity = -m_Renderer.m_CameraUp * 80.0f;
+        }
     }
 
 
     m_Velocity *= 0.96f;
     m_Renderer.m_CameraPosition += m_Velocity * m_Timer.GetDeltaSeconds();
+}
 
-
-
+void EditorApplication::Update()
+{
+    HandleCameraMovement();
     m_Renderer.SubmitGraphicsCommand([this](ID3D12GraphicsCommandList* commandList)
     {
         this->RenderUI();
@@ -114,7 +119,7 @@ void EditorApplication::OnCursorPosEvent(double xPos, double yPos)
     static double lastY = 0;
 
 
-    if (!glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) || !bIsViewportFocused)
+    if (!glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) || !m_bIsViewportFocused)
     {
         bWasRightButton = false;
         lastX = xPos;
@@ -142,16 +147,17 @@ void EditorApplication::OnCursorPosEvent(double xPos, double yPos)
 void EditorApplication::OnWindowFocusEvent(bool bIsWindowFocused)
 {
     Application::OnWindowFocusEvent(bIsWindowFocused);
-    spdlog::info("WindowFocusEvent: IsWindowFocused: {}", bIsWindowFocused);
-    m_bIsWindowFocused = bIsWindowFocused;
 }
 
 void EditorApplication::OnScrollEvent(double xOffset, double yOffset)
 {
     Application::OnScrollEvent(xOffset, yOffset);
-    m_Velocity = m_Renderer.m_CameraForward * 80.0f * 1.5f;
-    m_Velocity = yOffset > 0 ? m_Velocity : -m_Velocity;
-
+    if(glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) && m_bIsViewportFocused)
+    {
+        m_Velocity = m_Renderer.m_CameraForward * 80.0f * 1.5f;
+        m_Velocity = yOffset > 0 ? m_Velocity : -m_Velocity;    
+    }
+    
 }
 
 void EditorApplication::RenderUI()
@@ -161,7 +167,21 @@ void EditorApplication::RenderUI()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Exit"))
+            {
+                glfwSetWindowShouldClose(m_Window, true);
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
     ImGui::DockSpaceOverViewport();
+
 
     ImGui::Begin("Content Browser");
     if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered())
@@ -190,11 +210,11 @@ void EditorApplication::RenderUI()
     }
     if (ImGui::IsWindowFocused())
     {
-        bIsViewportFocused = true;
+        m_bIsViewportFocused = true;
     }
     else
     {
-        bIsViewportFocused = false;
+        m_bIsViewportFocused = false;
     }
 
     ImGui::End();

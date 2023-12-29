@@ -44,6 +44,5 @@ namespace Engine
         GLFWwindow* m_Window = nullptr;
         ApplicationSpec m_ApplicationSpec{};
         Timer m_Timer;
-        bool m_bIsWindowFocused = false;
     };
 }
