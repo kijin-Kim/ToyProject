@@ -84,12 +84,18 @@ namespace Engine
             Application* application = static_cast<Application*>(glfwGetWindowUserPointer(window));
             application->OnWindowFocusEvent(focused == GLFW_TRUE ? true : false);
         });
+
+        glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xoffset, double yoffset)
+        {
+            Application* application = static_cast<Application*>(glfwGetWindowUserPointer(window));
+            application->OnScrollEvent(xoffset, yoffset);
+        });
         //glfwMaximizeWindow(m_Window);
     }
 
     void Application::Update()
     {
-    }   
+    }
 
     HWND Application::GetWindowHandle() const
     {
@@ -131,5 +137,10 @@ namespace Engine
 
     void Application::OnWindowFocusEvent(bool bIsWindowFocused)
     {
+    }
+
+    void Application::OnScrollEvent(double xOffset, double yOffsets)
+    {
+        
     }
 }

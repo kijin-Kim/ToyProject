@@ -22,6 +22,7 @@ namespace Engine
     public:
         explicit Application(ApplicationSpec applicationSpec);
         virtual ~Application();
+        
 
         Application(const Application&) = delete;
         Application& operator=(const Application&) = delete;
@@ -35,6 +36,7 @@ namespace Engine
         virtual void OnKeyEvent(int key, int scanCode, int action, int mods);
         virtual void OnCursorPosEvent(double xPos, double yPos);
         virtual void OnWindowFocusEvent(bool bIsWindowFocused);
+        virtual void OnScrollEvent(double xOffset, double yOffsets);
         
 
     protected:

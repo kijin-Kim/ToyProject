@@ -106,6 +106,7 @@ namespace Engine
         DirectX::SimpleMath::Vector3 m_CameraUp = DirectX::SimpleMath::Vector3::UnitY;
 
         float m_AspectRatio;
+        float m_FieldOfView;
         
     };
 }

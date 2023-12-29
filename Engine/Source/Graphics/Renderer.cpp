@@ -19,6 +19,10 @@ namespace Engine
     {
         m_Width = width;
         m_Height = height;
+        m_AspectRatio = m_Width / static_cast<float>(m_Height);
+        m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, m_Width, m_Height);
+        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<int32_t>(m_Width), static_cast<int32_t>(m_Height));
+        m_FieldOfView = DirectX::XMConvertToRadians(60.0f);
         InitDirectX(windowHandle);
         Prepare();
     }
@@ -31,10 +35,6 @@ namespace Engine
         CreateSwapChain(windowHandle);
         CreateRenderTarget();
         CreateFence();
-
-        m_AspectRatio = m_Width / static_cast<float>(m_Height);
-        m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, m_Width, m_Height);
-        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<int32_t>(m_Width), static_cast<int32_t>(m_Height));
     }
 
     void Renderer::Prepare()
@@ -86,11 +86,11 @@ namespace Engine
         const DirectX::SimpleMath::Matrix view = XMMatrixLookToLH(m_CameraPosition, m_CameraForward, m_CameraUp);
 
 
-        constexpr float fieldOfView = DirectX::XMConvertToRadians(60.0f);
+        
         
         constexpr float nearPlane = 0.1f;
         constexpr float farPlane = 1000.0f;
-        const DirectX::SimpleMath::Matrix projection = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, m_AspectRatio, nearPlane, farPlane);
+        const DirectX::SimpleMath::Matrix projection = DirectX::XMMatrixPerspectiveFovLH(m_FieldOfView, m_AspectRatio, nearPlane, farPlane);
         DirectX::SimpleMath::Matrix viewProjection = view * projection;
 
         struct TransformData

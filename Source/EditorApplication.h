@@ -19,6 +19,7 @@ public:
     
     void OnCursorPosEvent(double xPos, double yPos) override;
     void OnWindowFocusEvent(bool bIsWindowFocused) override;
+    void OnScrollEvent(double xOffset, double yOffset) override;
 
 private:
     void RenderUI();
@@ -30,5 +31,4 @@ private:
 
 
     DirectX::SimpleMath::Vector3 m_Velocity;
-    DirectX::SimpleMath::Vector3 m_Acceleration;
 };

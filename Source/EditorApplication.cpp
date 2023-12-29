@@ -65,26 +65,34 @@ void EditorApplication::Update()
 {
     if (glfwGetKey(m_Window, GLFW_KEY_W))
     {
-        m_Velocity = m_Renderer.m_CameraForward * 50.0f;
+        m_Velocity = m_Renderer.m_CameraForward * 80.0f;
     }
 
     if (glfwGetKey(m_Window, GLFW_KEY_S))
     {
-        m_Velocity = -m_Renderer.m_CameraForward * 50.0f;
+        m_Velocity = -m_Renderer.m_CameraForward * 80.0f;
     }
     if (glfwGetKey(m_Window, GLFW_KEY_D))
     {
-        m_Velocity = m_Renderer.m_CameraRight * 50.0f;
+        m_Velocity = m_Renderer.m_CameraRight * 80.0f;
     }
     if (glfwGetKey(m_Window, GLFW_KEY_A))
     {
-        m_Velocity = -m_Renderer.m_CameraRight * 50.0f;
+        m_Velocity = -m_Renderer.m_CameraRight * 80.0f;
     }
-    
+    if (glfwGetKey(m_Window, GLFW_KEY_E))
+    {
+        m_Velocity = m_Renderer.m_CameraUp * 80.0f;
+    }
+    if (glfwGetKey(m_Window, GLFW_KEY_Q))
+    {
+        m_Velocity = -m_Renderer.m_CameraUp * 80.0f;
+    }
 
-    m_Velocity *= 0.93f;
+
+    m_Velocity *= 0.96f;
     m_Renderer.m_CameraPosition += m_Velocity * m_Timer.GetDeltaSeconds();
-    m_Acceleration = DirectX::SimpleMath::Vector3::Zero;
+
 
 
     m_Renderer.SubmitGraphicsCommand([this](ID3D12GraphicsCommandList* commandList)
@@ -138,6 +146,14 @@ void EditorApplication::OnWindowFocusEvent(bool bIsWindowFocused)
     m_bIsWindowFocused = bIsWindowFocused;
 }
 
+void EditorApplication::OnScrollEvent(double xOffset, double yOffset)
+{
+    Application::OnScrollEvent(xOffset, yOffset);
+    m_Velocity = m_Renderer.m_CameraForward * 80.0f * 1.5f;
+    m_Velocity = yOffset > 0 ? m_Velocity : -m_Velocity;
+
+}
+
 void EditorApplication::RenderUI()
 {
     // Start the Dear ImGui frame
@@ -161,7 +177,7 @@ void EditorApplication::RenderUI()
     ImGui::ShowDemoWindow(&show_demo_window);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoScrollbar;
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     ImGui::Begin("Viewport", nullptr, windowFlags);
     auto descHeap = m_Renderer.GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(descHeap->GetGPUDescriptorHandleForHeapStart(), m_Renderer.GetCurrentBackBufferIndex() + 1, Engine::Core::GetRenderContext().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
