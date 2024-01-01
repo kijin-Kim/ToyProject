@@ -90,6 +90,13 @@ namespace Engine
         D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView{};
         D3D12_INDEX_BUFFER_VIEW m_IndexBufferView{};
 
+        Microsoft::WRL::ComPtr<ID3D12Resource> m_BillboardVertexBuffer = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12Resource> m_BillboardIndexBuffer = nullptr;
+        D3D12_VERTEX_BUFFER_VIEW m_BillboardVertexBufferView{};
+        D3D12_INDEX_BUFFER_VIEW m_BillboardIndexBufferView{};
+
+        
+
         D3D12_VIEWPORT m_Viewport{};
         D3D12_RECT m_ScissorRect{};
 
@@ -113,7 +120,9 @@ namespace Engine
 
         const uint32_t m_FrameCount = 2;
 
+        DirectX::SimpleMath::Matrix m_Model = DirectX::SimpleMath::Matrix::Identity;
         DirectX::SimpleMath::Matrix m_CameraTransform;
+        DirectX::SimpleMath::Matrix m_Projection;
 
         
 

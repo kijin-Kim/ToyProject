@@ -137,7 +137,7 @@ void EditorApplication::OnCursorPosEvent(double xPos, double yPos)
 
     auto& cameraTransform = m_Renderer.m_Registry.get<Engine::TransformComponent>(m_Renderer.m_CameraEntity);
     cameraTransform.Rotation = DirectX::SimpleMath::Vector3{pitch, yaw, 0.0f};
-    
+
 
     lastX = xPos;
     lastY = yPos;
@@ -165,7 +165,7 @@ void EditorApplication::RenderUI()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
-    ImGuizmo::Enable(true);
+
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -216,6 +216,26 @@ void EditorApplication::RenderUI()
     {
         m_bIsViewportFocused = false;
     }
+
+
+    ImGuizmo::AllowAxisFlip(false);
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+
+    static ImGuizmo::OPERATION operation = ImGuizmo::OPERATION::TRANSLATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_W))
+        operation = ImGuizmo::TRANSLATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_E))
+        operation = ImGuizmo::ROTATE;
+    if (ImGui::IsKeyPressed(ImGuiKey_R))
+        operation = ImGuizmo::SCALE;
+
+    
+    
+    ImGuizmo::SetGizmoSizeClipSpace(0.2f);
+    Manipulate(m_Renderer.m_CameraTransform.Invert().m[0], m_Renderer.m_Projection.m[0], operation, ImGuizmo::LOCAL, m_Renderer.m_Model.m[0]);
 
     ImGui::End();
     ImGui::PopStyleVar(1);

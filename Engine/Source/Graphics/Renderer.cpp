@@ -117,7 +117,9 @@ namespace Engine
         DirectX::SimpleMath::Matrix modelScale = DirectX::SimpleMath::Matrix::CreateScale(1.0f);
         DirectX::SimpleMath::Matrix modelRotation = DirectX::SimpleMath::Matrix::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(angle), 0.0f, 0.0f);
         DirectX::SimpleMath::Matrix modelTranslation = DirectX::SimpleMath::Matrix::CreateTranslation(0.0f, 0.0f, 0.0f);
-        DirectX::SimpleMath::Matrix model = modelScale * modelRotation * modelTranslation;
+        m_Model = modelScale * modelRotation * modelTranslation;
+
+        //m_Model = DirectX::SimpleMath::Matrix::CreateBillboard(m_Model.Translation(), m_CameraTransform.Translation(), m_CameraTransform.Up());
 
 
         const auto& cameraTransform = m_Registry.get<TransformComponent>(m_CameraEntity);
@@ -129,8 +131,8 @@ namespace Engine
 
         constexpr float nearPlane = 0.1f;
         constexpr float farPlane = 1000.0f;
-        const DirectX::SimpleMath::Matrix projection = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(m_FieldOfView, m_AspectRatio, nearPlane, farPlane);
-        DirectX::SimpleMath::Matrix viewProjection = m_CameraTransform.Invert() * projection;
+        m_Projection = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(m_FieldOfView, m_AspectRatio, nearPlane, farPlane);
+        DirectX::SimpleMath::Matrix viewProjection = m_CameraTransform.Invert() * m_Projection;
 
 
         struct TransformData
@@ -140,8 +142,8 @@ namespace Engine
             DirectX::SimpleMath::Matrix MatVP;
         } transformData;
 
-        transformData.MatGeo = model.Transpose();
-        transformData.MatGeoInvert = model.Invert().Transpose();
+        transformData.MatGeo = m_Model.Transpose();
+        transformData.MatGeoInvert = m_Model.Invert().Transpose();
         transformData.MatVP = viewProjection.Transpose();
 
         m_DirectCommandList->SetGraphicsRoot32BitConstants(0, 48, &transformData, 0);
@@ -172,6 +174,7 @@ namespace Engine
         m_DirectCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         m_DirectCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView);
         m_DirectCommandList->IASetIndexBuffer(&m_IndexBufferView);
+        
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV]->GetCPUDescriptorHandleForHeapStart(), 0);
         m_DirectCommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -185,7 +188,17 @@ namespace Engine
 
             m_DirectCommandList->ClearRenderTargetView(rtvHandle, DirectX::Colors::DarkSlateGray, 0, nullptr);
         }
-        m_DirectCommandList->DrawIndexedInstanced(static_cast<uint32_t>(m_IndexBufferView.SizeInBytes / sizeof(uint32_t)), 1, 0, 0, 0);
+        //m_DirectCommandList->DrawIndexedInstanced(static_cast<uint32_t>(m_IndexBufferView.SizeInBytes / sizeof(uint32_t)), 1, 0, 0, 0);
+
+
+        
+        transformData.MatGeo = DirectX::SimpleMath::Matrix::Identity;
+        transformData.MatGeoInvert = DirectX::SimpleMath::Matrix::Identity; 
+        m_DirectCommandList->SetGraphicsRoot32BitConstants(0, 48, &transformData, 0);
+        m_DirectCommandList->IASetVertexBuffers(0, 1, &m_BillboardVertexBufferView);
+        m_DirectCommandList->IASetIndexBuffer(&m_BillboardIndexBufferView);
+        m_DirectCommandList->DrawIndexedInstanced(static_cast<uint32_t>(m_BillboardIndexBufferView.SizeInBytes / sizeof(uint32_t)), 1, 0, 0, 0);
+        
         {
             const auto& resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_SceneColorBuffers[currentBackBufferIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
             m_DirectCommandList->ResourceBarrier(1, &resourceBarrier);
@@ -360,30 +373,30 @@ namespace Engine
         Microsoft::WRL::ComPtr<ID3D12Resource> indexIntermediateBuffer = nullptr;
         EG_CONFIRM(SUCCEEDED(Core::GetRenderContext().GetDevice()->CreateCommittedResource(&uploadHeapProperty, D3D12_HEAP_FLAG_NONE, &indexBufferResourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&indexIntermediateBuffer))));
 
-        D3D12_SUBRESOURCE_DATA vertexSubresourceData = {};
+        D3D12_SUBRESOURCE_DATA vertexSubresourceData{};
         vertexSubresourceData.pData = vertices.data();
         vertexSubresourceData.RowPitch = vertices.size() * sizeof(Vertex);
         vertexSubresourceData.SlicePitch = vertices.size() * sizeof(Vertex);
 
-        D3D12_SUBRESOURCE_DATA indexSubresourceData = {};
+        D3D12_SUBRESOURCE_DATA indexSubresourceData{};
         indexSubresourceData.pData = indices.data();
         indexSubresourceData.RowPitch = indices.size() * sizeof(uint32_t);
         indexSubresourceData.SlicePitch = indices.size() * sizeof(uint32_t);
 
 
         m_CopyCommandList->Reset(m_CopyCommandAllocator.Get(), nullptr);
-        UpdateSubresources(m_CopyCommandList.Get(), m_VertexBuffer.Get(), vertexIntermediateBuffer.Get(), 0, 0, 1, &vertexSubresourceData);
-        UpdateSubresources(m_CopyCommandList.Get(), m_IndexBuffer.Get(), indexIntermediateBuffer.Get(), 0, 0, 1, &indexSubresourceData);
+        UpdateSubresources(m_CopyCommandList.Get(), outVertexBuffer.Get(), vertexIntermediateBuffer.Get(), 0, 0, 1, &vertexSubresourceData);
+        UpdateSubresources(m_CopyCommandList.Get(), outIndexBuffer.Get(), indexIntermediateBuffer.Get(), 0, 0, 1, &indexSubresourceData);
         m_CopyCommandList->Close();
         m_CopyCommandQueue->ExecuteCommandLists(1, CommandListCast(m_CopyCommandList.GetAddressOf()));
         GraphicsHelper::WaitForGPU(m_CopyCommandQueue, m_Fence, m_FenceValue);
 
 
-        outVertexBufferView.BufferLocation = m_VertexBuffer->GetGPUVirtualAddress();
+        outVertexBufferView.BufferLocation = outVertexBuffer->GetGPUVirtualAddress();
         outVertexBufferView.SizeInBytes = static_cast<uint32_t>(vertices.size() * sizeof(Vertex));
         outVertexBufferView.StrideInBytes = sizeof(Vertex);
 
-        outIndexBufferView.BufferLocation = m_IndexBuffer->GetGPUVirtualAddress();
+        outIndexBufferView.BufferLocation = outIndexBuffer->GetGPUVirtualAddress();
         outIndexBufferView.SizeInBytes = static_cast<uint32_t>(indices.size() * sizeof(uint32_t));
         outIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
     }
@@ -467,6 +480,22 @@ namespace Engine
         auto meshHandle = AssetManager::LoadMesh("teapot"_hs, "Content/teapot.obj");
 
         CreateVertexAndIndexBufferView(meshHandle->Vertices, meshHandle->Indices, m_VertexBuffer, m_IndexBuffer, m_VertexBufferView, m_IndexBufferView);
+
+        auto a = sizeof(Vertex);
+        std::vector<Vertex> vertices = {
+            {.Position{-0.5f, 0.5f, 0.0f}, .Normal{0.0f, 0.0f, 1.0f}, .TexCoord{0.0f, 0.0f}},
+            {.Position{0.5f, 0.5f, 0.0f}, .Normal{0.0f, 0.0f, 1.0f}, .TexCoord{1.0f, 0.0f}},
+            {.Position{0.5f, -0.5f, 0.0f}, .Normal{0.0f, 0.0f, 1.0f}, .TexCoord{1.0f, 1.0f}},
+            {.Position{-0.5f, -0.5f, 0.0f}, .Normal{0.0f, 0.0f, 1.0f}, .TexCoord{0.0f, 1.0f}},
+        };
+        
+        std::vector<uint32_t> indices {
+            0, 3, 2,
+            0, 2, 1
+        };
+        
+        
+        CreateVertexAndIndexBufferView(vertices, indices, m_BillboardVertexBuffer, m_BillboardIndexBuffer, m_BillboardVertexBufferView, m_BillboardIndexBufferView);
 
 
         const auto textureHandle = Engine::AssetManager::LoadTexture("yoimiya_texture"_hs, "Content/sticker_6.png");
