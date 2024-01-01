@@ -8,10 +8,14 @@
 #include "AssetManager.h"
 #include "GraphicsTypes.h"
 #include "SimpleMath.h"
+#include "ECS/Scene.h"
 
-
+struct CD3DX12_ROOT_PARAMETER;
 namespace Engine
 {
+    struct DisplayNameComponent;
+
+
     class Renderer
     {
         // TEMP
@@ -22,21 +26,32 @@ namespace Engine
 
     public:
         void Initialize(HWND windowHandle, uint32_t width, uint32_t height);
+
+        
         void InitDirectX(HWND windowHandle);
         void Prepare();
         void Render();
 
-        void CreateCommandQueue();
-        void CreateCommandList();
-        void CreateDescriptorHeaps();
-        void CreateSwapChain(HWND windowHandle);
-        void CreateRenderTarget();
-        void CreateSceneTextures(int width, int height);
+        void CreateCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType, Microsoft::WRL::ComPtr<ID3D12CommandQueue>& outCommandQueue);
+        void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, Microsoft::WRL::ComPtr<ID3D12CommandAllocator>& outCommandAllocator);
+        void CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& outCommandList);
+        void CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, D3D12_DESCRIPTOR_HEAP_FLAGS descriptorHeapFlag, uint32_t maximumDescriptorsCount, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& outDescriptorHeap);
+
+        
+        void CreateSwapChain(uint32_t width, uint32_t height, HWND windowHandle);
+        void CreateRenderTarget(uint32_t width, uint32_t height);
+        void CreateSceneTextures(uint64_t width, uint32_t height);
         void CreateFence();
         void WaitForGPU();
-        void CreateVertexAndIndexBuffer();
+
+
+        void CreateVertexAndIndexBufferView(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
+                                            Microsoft::WRL::ComPtr<ID3D12Resource>& outVertexBuffer, Microsoft::WRL::ComPtr<ID3D12Resource>& outIndexBuffer,
+                                            D3D12_VERTEX_BUFFER_VIEW& outVertexBufferView, D3D12_INDEX_BUFFER_VIEW& outIndexBufferView);
+        void CreateRootSignature(uint32_t rootParameterCount, CD3DX12_ROOT_PARAMETER* rootParameters, Microsoft::WRL::ComPtr<ID3D12RootSignature>& outRootSignature);
         void CreatePipelineState();
 
+        
         void LoadAssets();
         void SubmitGraphicsCommand(const RenderCommand& renderCommand);
 
@@ -55,9 +70,9 @@ namespace Engine
 
     public:
         Microsoft::WRL::ComPtr<ID3D12Fence> m_Fence = nullptr;
-        Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CommandQueue = nullptr;
-        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CommandAllocator = nullptr;
-        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CommandList = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_DirectCommandQueue = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_DirectCommandAllocator = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_DirectCommandList = nullptr;
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_CopyCommandQueue = nullptr;
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CopyCommandAllocator = nullptr;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_CopyCommandList = nullptr;
@@ -65,7 +80,6 @@ namespace Engine
         Microsoft::WRL::ComPtr<IDXGISwapChain3> m_SwapChain = nullptr;
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_SwapChainBuffers;
         std::array<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> m_DescriptorHeaps;
-        std::array<uint32_t, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> m_DescriptorHeapIncrementSizes;
 
         Microsoft::WRL::ComPtr<ID3D12RootSignature> m_RootSignature = nullptr;
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_PipelineState = nullptr;
@@ -89,8 +103,6 @@ namespace Engine
 
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_Texture;
-        std::vector<Vertex> m_Vertices;
-        std::vector<uint32_t> m_Indices;
 
         std::vector<RenderCommand> m_RenderCommands;
 
@@ -100,13 +112,18 @@ namespace Engine
         entt::registry m_Registry;
 
         const uint32_t m_FrameCount = 2;
-        DirectX::SimpleMath::Vector3 m_CameraPosition = DirectX::SimpleMath::Vector3{0.0f, 10.0f, -40.0f};
-        DirectX::SimpleMath::Vector3 m_CameraForward = DirectX::SimpleMath::Vector3::UnitZ;
-        DirectX::SimpleMath::Vector3 m_CameraRight = DirectX::SimpleMath::Vector3::UnitX;
-        DirectX::SimpleMath::Vector3 m_CameraUp = DirectX::SimpleMath::Vector3::UnitY;
+
+        DirectX::SimpleMath::Matrix m_CameraTransform;
+
+        
 
         float m_AspectRatio;
         float m_FieldOfView;
+
+        std::unique_ptr<Scene> m_Scene;
+
+        entt::entity m_CameraEntity;
         
     };
+    
 }

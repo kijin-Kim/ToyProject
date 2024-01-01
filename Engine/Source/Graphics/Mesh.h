@@ -1,18 +1,19 @@
 #pragma once
 #include <memory>
-#include <string_view>
 #include <vector>
-
 #include "GraphicsTypes.h"
 
 
 namespace Engine
 {
+    
     struct Mesh
     {
         std::vector<Vertex> Vertices;
         std::vector<uint32_t> Indices;
+        
     };
+
 
     struct MeshLoader
     {

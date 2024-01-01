@@ -55,10 +55,6 @@ namespace Engine
 
         glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
         {
-            // #define GLFW_FALSE                  0
-            // #define GLFW_RELEASE                0
-            // #define GLFW_PRESS                  1
-            // #define GLFW_REPEAT                 2
             if (key == GLFW_KEY_ENTER && action == GLFW_PRESS && mods == GLFW_MOD_ALT)
             {
                 GLFWmonitor* monitor = glfwGetWindowMonitor(window);
@@ -125,9 +121,9 @@ namespace Engine
             m_ApplicationSpec.Height = height;
             m_Renderer.m_Width = width;
             m_Renderer.m_Height = height;
-            m_Renderer.m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, m_Renderer.m_Width, m_Renderer.m_Height);
+            m_Renderer.m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(m_Renderer.m_Width), static_cast<float>(m_Renderer.m_Height));
             m_Renderer.m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<int32_t>(m_Renderer.m_Width), static_cast<int32_t>(m_Renderer.m_Height));
-            m_Renderer.CreateRenderTarget();
+            m_Renderer.CreateRenderTarget(m_Renderer.m_Width, m_Renderer.m_Height);
             m_Renderer.CreateSceneTextures(m_Renderer.m_Width, m_Renderer.m_Height);
         }
     }

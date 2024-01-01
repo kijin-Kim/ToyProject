@@ -1,9 +1,9 @@
 project "imgui"
 	kind "StaticLib"
 	language "C++"
-   cppdialect "C++17"
-   staticruntime "Off"
-   justmycode "Off"
+   	cppdialect "C++17"
+   	staticruntime "Off"
+   	justmycode "Off"
 
 
    targetdir ("Binaries/" .. OutputPath)
@@ -29,7 +29,9 @@ project "imgui"
       "backends/imgui_impl_dx12.h",
       "backends/imgui_impl_dx12.cpp",
       "backends/imgui_impl_glfw.h",
-      "backends/imgui_impl_glfw.cpp",  
+      "backends/imgui_impl_glfw.cpp",
+	  "ImGuizmo/ImGuizmo.h",
+	  "ImGuizmo/ImGuizmo.cpp"
 	}
 
    includedirs

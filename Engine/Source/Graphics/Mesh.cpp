@@ -18,7 +18,7 @@ namespace Engine
         const aiScene* scene = importer.ReadFile(filePath.data(), aiProcess_ConvertToLeftHanded | aiProcessPreset_TargetRealtime_Fast);
         if (!scene)
         {
-            //spdlog::debug("{}", importer.GetErrorString());
+            spdlog::debug("{}", importer.GetErrorString());
             return nullptr;
         }
 
@@ -51,7 +51,8 @@ namespace Engine
             }
         }
 
-
-        return std::make_shared<Mesh>(Vertices, Indices);
+        
+        auto mesh = std::make_shared<Mesh>(Vertices, Indices);
+        return mesh;
     }
 }

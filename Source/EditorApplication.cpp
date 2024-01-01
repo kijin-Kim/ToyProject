@@ -4,13 +4,13 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
-#include "Engine.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_glfw.h"
 #include "Core/Core.h"
 #include "ECS/Components.h"
+#include "ImGuizmo/ImGuizmo.h"
 
 EditorApplication::~EditorApplication()
 {
@@ -22,7 +22,6 @@ EditorApplication::~EditorApplication()
 void EditorApplication::Initialize()
 {
     Application::Initialize();
-    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -67,34 +66,35 @@ void EditorApplication::HandleCameraMovement()
     {
         if (glfwGetKey(m_Window, GLFW_KEY_W))
         {
-            m_Velocity = m_Renderer.m_CameraForward * 80.0f;
+            m_Velocity = m_Renderer.m_CameraTransform.Forward() * 80.0f;
         }
 
         if (glfwGetKey(m_Window, GLFW_KEY_S))
         {
-            m_Velocity = -m_Renderer.m_CameraForward * 80.0f;
+            m_Velocity = m_Renderer.m_CameraTransform.Backward() * 80.0f;
         }
         if (glfwGetKey(m_Window, GLFW_KEY_D))
         {
-            m_Velocity = m_Renderer.m_CameraRight * 80.0f;
+            m_Velocity = m_Renderer.m_CameraTransform.Right() * 80.0f;
         }
         if (glfwGetKey(m_Window, GLFW_KEY_A))
         {
-            m_Velocity = -m_Renderer.m_CameraRight * 80.0f;
+            m_Velocity = m_Renderer.m_CameraTransform.Left() * 80.0f;
         }
         if (glfwGetKey(m_Window, GLFW_KEY_E))
         {
-            m_Velocity = m_Renderer.m_CameraUp * 80.0f;
+            m_Velocity = m_Renderer.m_CameraTransform.Up() * 80.0f;
         }
         if (glfwGetKey(m_Window, GLFW_KEY_Q))
         {
-            m_Velocity = -m_Renderer.m_CameraUp * 80.0f;
+            m_Velocity = m_Renderer.m_CameraTransform.Down() * 80.0f;
         }
     }
 
 
     m_Velocity *= 0.96f;
-    m_Renderer.m_CameraPosition += m_Velocity * m_Timer.GetDeltaSeconds();
+    auto& cameraTransform = m_Renderer.m_Registry.get<Engine::TransformComponent>(m_Renderer.m_CameraEntity);
+    cameraTransform.Position += m_Velocity * static_cast<float>(m_Timer.GetDeltaSeconds());
 }
 
 void EditorApplication::Update()
@@ -112,7 +112,6 @@ void EditorApplication::Update()
 void EditorApplication::OnCursorPosEvent(double xPos, double yPos)
 {
     Application::OnCursorPosEvent(xPos, yPos);
-    spdlog::info("CursorPosEvent: X: {}, Y: {}", xPos, yPos);
 
     static bool bWasRightButton = false;
     static double lastX = 0;
@@ -128,17 +127,17 @@ void EditorApplication::OnCursorPosEvent(double xPos, double yPos)
     }
 
 
-    const double deltaX = (xPos - lastX);
-    const double deltaY = (yPos - lastY);
+    const float deltaX = static_cast<float>(lastX - xPos);
+    const float deltaY = static_cast<float>(lastY - yPos);
 
-    static double yaw = 0;
-    static double pitch = 0;
-    yaw += deltaX * 15.0f * m_Timer.GetDeltaSeconds();
-    pitch += deltaY * 15.0f * m_Timer.GetDeltaSeconds();
+    static float yaw = 0;
+    static float pitch = 0;
+    yaw += deltaX * 15.0f * static_cast<float>(m_Timer.GetDeltaSeconds());
+    pitch += deltaY * 15.0f * static_cast<float>(m_Timer.GetDeltaSeconds());
 
-    m_Renderer.m_CameraForward = DirectX::SimpleMath::Vector3::TransformNormal(DirectX::SimpleMath::Vector3::UnitZ, DirectX::SimpleMath::Matrix::CreateFromQuaternion(DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(yaw), DirectX::XMConvertToRadians(pitch), 0.0f)));
-    m_Renderer.m_CameraUp = DirectX::SimpleMath::Vector3::TransformNormal(DirectX::SimpleMath::Vector3::UnitY, DirectX::SimpleMath::Matrix::CreateFromQuaternion(DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(DirectX::XMConvertToRadians(yaw), DirectX::XMConvertToRadians(pitch), 0.0f)));
-    m_Renderer.m_CameraRight = m_Renderer.m_CameraUp.Cross(m_Renderer.m_CameraForward);
+    auto& cameraTransform = m_Renderer.m_Registry.get<Engine::TransformComponent>(m_Renderer.m_CameraEntity);
+    cameraTransform.Rotation = DirectX::SimpleMath::Vector3{pitch, yaw, 0.0f};
+    
 
     lastX = xPos;
     lastY = yPos;
@@ -152,12 +151,11 @@ void EditorApplication::OnWindowFocusEvent(bool bIsWindowFocused)
 void EditorApplication::OnScrollEvent(double xOffset, double yOffset)
 {
     Application::OnScrollEvent(xOffset, yOffset);
-    if(glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) && m_bIsViewportFocused)
+    if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_RIGHT) && m_bIsViewportFocused)
     {
-        m_Velocity = m_Renderer.m_CameraForward * 80.0f * 1.5f;
-        m_Velocity = yOffset > 0 ? m_Velocity : -m_Velocity;    
+        m_Velocity = m_Renderer.m_CameraTransform.Backward() * 80.0f * 1.5f;
+        m_Velocity = yOffset > 0 ? m_Velocity : -m_Velocity;
     }
-    
 }
 
 void EditorApplication::RenderUI()
@@ -166,6 +164,8 @@ void EditorApplication::RenderUI()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
+    ImGuizmo::Enable(true);
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -338,6 +338,8 @@ void EditorApplication::RenderUI()
     }
 
     ImGui::PopID();
+
+
     ImGui::End();
     ImGui::Render();
 }

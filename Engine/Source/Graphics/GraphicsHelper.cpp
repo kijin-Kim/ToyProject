@@ -21,7 +21,7 @@ namespace Engine
             D3D12_SUBRESOURCE_DATA subresourceData = {};
             subresourceData.pData = textureHandle->Data;
             subresourceData.RowPitch = textureHandle->Width * textureHandle->channelCount;
-            subresourceData.SlicePitch = textureHandle->Height * textureHandle->channelCount;
+            subresourceData.SlicePitch = textureHandle->Width * textureHandle->Height * textureHandle->channelCount;
 
             const auto textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 512, 512);
             const auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -33,7 +33,7 @@ namespace Engine
                 &textureDesc,
                 D3D12_RESOURCE_STATE_COPY_DEST,
                 nullptr,
-                IID_PPV_ARGS(&outResource))));
+                IID_PPV_ARGS(outResource.GetAddressOf()))));
 
             const auto uploadBufferSize = GetRequiredIntermediateSize(outResource.Get(), 0, 1);
 

@@ -11,6 +11,7 @@ namespace Engine
         EnableDebugLayer();
         CreateFactory();
         CreateDevice();
+        RetrieveDescriptorIncrementSizes();
     }
 
     void RenderContext::EnableDebugLayer()
@@ -69,5 +70,13 @@ namespace Engine
         EG_CONFIRM(SUCCEEDED(infoQueue->AddStorageFilterEntries(&infoQueueFilter)));
 
 #endif
+    }
+
+    void RenderContext::RetrieveDescriptorIncrementSizes()
+    {
+        for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
+        {
+            m_DescriptorIncrementSizes[i] = m_Device->GetDescriptorHandleIncrementSize(static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(i));
+        }
     }
 }
